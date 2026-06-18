@@ -129,5 +129,5 @@ jobs:
       - name: Deploy
         shell: bash
         run: |
-          sh src/main/scripts/testesPerformance.sh
+          bash src/main/scripts/testesPerformance.sh
     
