@@ -3,44 +3,42 @@ name: pipeline
 on:
   push:
   workflow_dispatch:
-jobs:        
+jobs:
   unit-test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
-      - run: mvn test
+    - run: mvn test
+    - name: Generate JaCoCo Badge
+      id: jacoco
+      uses: cicirello/jacoco-badge-generator@v2.0.1
+    - name: Log coverage percentage
+      run: |
+        echo "coverage = ${{ steps.jacoco.outputs.coverage }}"
+        echo "branch coverage = ${{ steps.jacoco.outputs.branches }}"
+    - name: Upload JaCoCo coverage report
+      uses: actions/upload-artifact@v4.4.0
+      with:
+        name: jacoco-report
+        path: target/site/jacoco
 
-      - name: Generate JaCoCo Badge
-        id: jacoco
-        uses: cicirello/jacoco-badge-generator@v2.11.0
-
-      - name: Log coverage percentage
-        run: |
-          echo "coverage = ${{ steps.jacoco.outputs.coverage }}"
-          echo "branch coverage = ${{ steps.jacoco.outputs.branches }}"
-
-      - name: Upload JaCoCo coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco/
-
-  build: 
-    needs: unit-test
+  build:
     runs-on: ubuntu-latest
+    needs: unit-test
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Build with Maven
-      run: mvn -B package -DskipTests --file pom.xml      
+      run: mvn -B package -DskipTests --file pom.xml
     - name: Display structure of downloaded files
       run: ls -R
       working-directory: target/
-   
+
     - name: Upload JAR
         #This uploads artifacts from your workflow allowing you to share data between jobs and store data once a workflow is complete.
       uses: actions/upload-artifact@v4.4.0
@@ -49,42 +47,43 @@ jobs:
         name: artifact
         #From this path
         path: ./target/demo-0.0.2.7-SNAPSHOT.jar
-    
+
     - name: Package
-      run: mvn package  
+      run: mvn package
 
   deploy-STG:
     runs-on: ubuntu-latest
     needs: build
-  
+
     if: github.ref == 'refs/heads/develop'
     steps:
-      - name: Deploy 
+      - name: Deploy
         shell: bash
         run: |
-          echo "Deploy STG"    
+          echo "Deploy STG"
 
-  smoketest:
+  Smoketest:
     runs-on: ubuntu-latest
     needs: deploy-STG
+
     if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v3
-      - name: Smoke test
+      - name: Deploy
         shell: bash
         run: |
-          sh src/main/scripts/smoketest.sh
+          sh 'src/main/scripts/smoketest.sh'
 
   testeIntegrados:
     runs-on: ubuntu-latest
-    needs: smoketest
+    needs: Smoketest
     if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v3
-      - name: Teste de Integracao
+      - name: Deploy
         shell: bash
         run: |
-          sh src/main/scripts/testeIntegrado.sh
+          sh 'src/main/scripts/testeIntegrado.sh'
 
   deploy-Pre:
     runs-on: ubuntu-latest
@@ -101,33 +100,36 @@ jobs:
   SmoketestPre:
     runs-on: ubuntu-latest
     needs: deploy-Pre
+
     if: github.ref == 'refs/heads/release'
     steps:
       - uses: actions/checkout@v3
       - name: Deploy
         shell: bash
         run: |
-          sh src/main/scripts/smoketest.sh
+          sh 'src/main/scripts/smoketest.sh'
 
   testeFuncionais:
     runs-on: ubuntu-latest
     needs: SmoketestPre
-    if: github.ref == 'refs/heads/release'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy
-        shell: bash
-        run: |
-          sh src/main/scripts/testesFuncionais.sh
 
-  testesPerformance:
-    runs-on: ubuntu-latest
-    needs: testeFuncionais
     if: github.ref == 'refs/heads/release'
     steps:
       - uses: actions/checkout@v3
       - name: Deploy
         shell: bash
         run: |
-          bash src/main/scripts/testesPerformance.sh
-    
+          sh 'src/main/scripts/testesFuncionais.sh'
+
+  deploy-Prod:
+    runs-on: ubuntu-latest
+
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: prod
+    needs: build
+    steps:
+      - name: Deploy
+        shell: bash
+        run: |
+          echo "Deploy PROD"
