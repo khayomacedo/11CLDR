@@ -46,7 +46,7 @@ jobs:
         run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
       - name: Snyk Code test
-        run: snyk code test --org=khayomacedo --sarif-file-output=snyk-code.sarif
+        run: snyk code test --org=12ba900e-33f9-4e7b-b9fb-f00d37b24f56 --sarif-file-output=snyk-code.sarif
         #run: snyk code test --severity-threshold=low --sarif-file-output=snyk-code.sarif (comentar a linha de cima e deixar para nao barrar)
 
       - name: Run Snyk to check for vulnerabilities
@@ -55,7 +55,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --org=khayomacedo --sarif-file-output=snyk.sarif
+          args: --org=12ba900e-33f9-4e7b-b9fb-f00d37b24f56 --sarif-file-output=snyk.sarif
 
   code-analisys:
     runs-on: ubuntu-latest
