@@ -71,5 +71,10 @@ public class DemoApplication {
 	String UFSCAR(){
 		return "Turma UFSCAR 2026";
 	}
+
+	@GetMapping("/11CLDR")
+	String cldr11(){
+		return "Turma MBA em Cloud - Engineering & Architecture";
+	}
 	
 }	
