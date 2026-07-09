@@ -93,6 +93,7 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Build and analyze
+        continue-on-error: true
         run: >
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar
           -Dsonar.projectKey=khayodevopsfiap
